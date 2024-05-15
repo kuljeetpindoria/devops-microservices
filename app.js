@@ -1,39 +1,100 @@
-const http = require('http');
-const port = process.env.PORT || 4000;
 const express = require('express');
-const app = express();
-const mongoose = require('mongoose')
-const bodyParser = require('body-parser')
-const cors = require('cors')
-const userRoute = require('./api/routes/user')
+const mongoose = require('mongoose');
+const bodyParser = require('body-parser');
+const bcrypt = require('bcryptjs');
 
-mongoose.connect('mongodb+srv://kuljeetpindoria:Stkh%401895@cluster0.vwaptb9.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0')
+
+const app = express();
+
+
+app.set('view engine', 'ejs');
+
+
+
+mongoose.connect('mongodb+srv://kuljeetpindoria:Stkh%401895@cluster0.vwaptb9.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0', { useNewUrlParser: true, useUnifiedTopology: true });
 
 mongoose.connection.on('error', err => {
     console.log('connection failed');
 })
 
 mongoose.connection.on('connected', connected => {
-    console.log('connected successfully',  connected)
+    console.log('connected successfully', connected)
 
 })
 
-app.use(bodyParser.urlencoded({ extended: false }));
+
+const userSchema = new mongoose.Schema({
+    username: String,
+    password: String
+});
+
+
+const User = mongoose.model('User', userSchema);
+
+app.use(bodyParser.urlencoded({ extended: true }));
+
 
 app.use(bodyParser.json());
 
-app.use(cors());
-app.use('/user', userRoute)
 
-app.get('/', (req, res, next) => {
-    res.send("Hello World")
-})
-  
-app.use(function(req, res, next) {
-    res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-    next();
-  });
-const server = http.createServer(app);
-  
-server.listen(port, console.log('app is running...'))
+app.get('/login', (req, res) => {
+    res.render('login');
+});
+
+
+app.post('/login', async (req, res) => {
+    const { username, password } = req.body;
+
+    try {
+
+        const user = await User.findOne({ username });
+
+        
+        if (user && await bcrypt.compare(password, user.password)) {
+            res.send('Login successful!');
+        } else {
+            res.send('Invalid username or password');
+        }
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+app.get('/register', (req, res) => {
+    res.render('register');
+});
+
+app.post('/register', async (req, res) => {
+    const { username, password } = req.body;
+
+    try {
+        const existingUser = await User.findOne({ username });
+        if (existingUser) {
+            return res.send('Username already exists');
+        }
+
+       
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+       
+        await User.create({
+            username,
+            password: hashedPassword
+        });
+
+        res.send('Registration successful!');
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+// Start the server
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Server is running on http://localhost:${PORT}`);
+});
+
+
+
