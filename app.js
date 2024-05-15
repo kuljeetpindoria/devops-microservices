@@ -5,18 +5,17 @@ const app = express();
 const mongoose = require('mongoose')
 const bodyParser = require('body-parser')
 const cors = require('cors')
-const studentRoute = require('./api/routes/student')
 const userRoute = require('./api/routes/user')
 
-
-mongoose.connect('mongodb+srv://kuljeet:Stkh%401895@cluster0.wgq90.mongodb.net/myFirstDatabase?retryWrites=true&w=majority')
+mongoose.connect('mongodb+srv://kuljeetpindoria:Stkh%401895@cluster0.vwaptb9.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0')
 
 mongoose.connection.on('error', err => {
     console.log('connection failed');
 })
 
 mongoose.connection.on('connected', connected => {
-    console.log('connected successfully')
+    console.log('connected successfully',  connected)
+
 })
 
 app.use(bodyParser.urlencoded({ extended: false }));
@@ -24,7 +23,6 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
 app.use(cors());
-app.use('/student', studentRoute);
 app.use('/user', userRoute)
 
 app.get('/', (req, res, next) => {
